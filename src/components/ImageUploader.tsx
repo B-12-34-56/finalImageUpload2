@@ -19,6 +19,7 @@ export const ImageUploader: React.FC = () => {
     type: 'success',
     show: false,
   });
+  const [imageTag, setImageTag] = useState<string | null>(null);  // Added state for the image tag
 
   // Poll for the image tag by querying the API endpoint
   const pollForTag = async (filename: string) => {
@@ -29,6 +30,7 @@ export const ImageUploader: React.FC = () => {
       const tagResult = await getImageTag(filename);
       if (tagResult && tagResult.tag) {
         clearInterval(interval);
+        setImageTag(tagResult.tag);  // Save the tag when found
         setStatus({
           message: `Image uploaded successfully with tag "${tagResult.tag}"!`,
           type: 'success',
@@ -139,6 +141,16 @@ export const ImageUploader: React.FC = () => {
 
       {uploadedImage && (
         <ImagePreview imageUrl={uploadedImage} onDelete={handleDelete} />
+      )}
+
+      {/* Display the image tag if it is found */}
+      {imageTag && (
+        <UploadStatus
+          message={`This image is tagged as: ${imageTag}`}
+          type="success"
+          open={true}
+          onClose={() => setImageTag(null)}
+        />
       )}
 
       <UploadStatus
