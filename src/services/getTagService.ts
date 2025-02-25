@@ -1,4 +1,4 @@
-export const getImageTag = async (filename: string): Promise<{ tag: string } | null> => {
+export const getImageTag = async (filename: string): Promise<{ tag: string, filePath: String, tags: String[] } | null> => {
   const apiUrl = process.env.REACT_APP_GET_TAG_API_URL;
   // const apiKey = process.env.REACT_APP_API_KEY; // Ensure this is set in your .env file
   if (!apiUrl) {

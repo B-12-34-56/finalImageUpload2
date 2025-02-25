@@ -15,7 +15,7 @@ export const UploadStatus: React.FC<UploadStatusProps> = ({
   onClose,
 }) => {
   return (
-    <Snackbar open={open} autoHideDuration={6000} onClose={onClose}>
+    <Snackbar open={open} autoHideDuration={60000} onClose={onClose}>
       <Alert onClose={onClose} severity={type} sx={{ width: '100%' }}>
         {message}
       </Alert>

@@ -31,27 +31,31 @@ const UploadToS3: React.FC = () => {
     }
   };
 
-  // Poll for the image tag
+  // Poll for the image tag, expecting the response to include a "tags" property.
   const pollForTag = async (filename: string) => {
-    const maxAttempts = 20;
+    const maxAttempts = 3;
     let attempts = 0;
     console.log("Starting pollForTag with filename:", filename);
     const interval = setInterval(async () => {
       attempts++;
-      console.log(`Polling attempt ${attempts}...`);
+      console.log(`Polling attempt ${attempts} for filename: ${filename}`);
       const tagResult = await getImageTag(filename);
       console.log("Tag result:", tagResult);
-      if (tagResult && tagResult.tag) {
+      // Check if the response contains a non-empty "tags" array.
+      if (tagResult && tagResult.tags && tagResult.tags.length > 0) {
         clearInterval(interval);
         setStatus({
-          message: `Image uploaded successfully with tag "${tagResult.tag}"!`,
+          message: `Image uploaded successfully with tags: ${JSON.stringify(
+            tagResult.tags
+          )}`,
           type: "success",
           show: true,
         });
       } else if (attempts >= maxAttempts) {
         clearInterval(interval);
         setStatus({
-          message: "Image uploaded successfully but tag was not found: " + filename,
+          message:
+            "Image uploaded successfully but tags were not found: " + filename,
           type: "success",
           show: true,
         });
@@ -65,40 +69,43 @@ const UploadToS3: React.FC = () => {
     }, 3000); // Poll every 3 seconds
   };
 
-
   const uploadFile = async () => {
     if (!file) {
-      setStatus({ message: "Please select a file first!", type: "error", show: true });
+      setStatus({
+        message: "Please select a file first!",
+        type: "error",
+        show: true,
+      });
       return;
     }
-  
+
     setUploading(true);
     const fileKey = `${SUBFOLDER}${file.name}`;
-  
+
     try {
       const params = {
         Bucket: S3_BUCKET,
         Key: fileKey,
         ContentType: file.type,
       };
-  
+
       const command = new PutObjectCommand(params);
       const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
       console.log("Generated upload URL:", uploadUrl);
-  
+
       const response = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
         headers: { "Content-Type": file.type },
       });
-  
+
       if (response.ok) {
         setStatus({
           message: "File uploaded successfully. Starting to poll for tag.",
           type: "success",
           show: true,
         });
-        // Pass just the base filename, not the full key.
+        // Pass only the base filename (e.g., "test19.jpg") so the Lambda constructs the correct S3 key.
         pollForTag(file.name);
       } else {
         setStatus({ message: "Upload failed.", type: "error", show: true });
