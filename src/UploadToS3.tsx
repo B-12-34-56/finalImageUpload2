@@ -31,7 +31,8 @@ const UploadToS3: React.FC = () => {
     }
   };
 
-  // Poll for the image tag, expecting the response to include a "tags" property.
+  // Poll for the image tag.
+  // We cast the response as any to access the message property if it exists.
   const pollForTag = async (filename: string) => {
     const maxAttempts = 3;
     let attempts = 0;
@@ -41,21 +42,35 @@ const UploadToS3: React.FC = () => {
       console.log(`Polling attempt ${attempts} for filename: ${filename}`);
       const tagResult = await getImageTag(filename);
       console.log("Tag result:", tagResult);
-      // Check if the response contains a non-empty "tags" array.
-      if (tagResult && tagResult.tags && tagResult.tags.length > 0) {
+      // Cast tagResult as any so we can access the "message" property.
+      const responseMessage = (tagResult as any).message || "";
+      console.log("responseMessage", responseMessage);
+      if (responseMessage.includes("Duplicate image detected")) {
+        clearInterval(interval);
+        if (tagResult && tagResult.tags && tagResult.tags.length > 0) {
+          setStatus({
+            message: `Image already exists: tags found: ${JSON.stringify(tagResult.tags)} BLOCKED IMAGE`,
+            type: "error",
+            show: true,
+          });
+        } else {
+          setStatus({
+            message: "Image already exists, no tags found.",
+            type: "success",
+            show: true,
+          });
+        }
+      } else if (tagResult && tagResult.tags && tagResult.tags.length > 0) {
         clearInterval(interval);
         setStatus({
-          message: `Image uploaded successfully with tags: ${JSON.stringify(
-            tagResult.tags
-          )}`,
+          message: `Image uploaded successfully with tags: ${JSON.stringify(tagResult.tags)}`,
           type: "success",
           show: true,
         });
       } else if (attempts >= maxAttempts) {
         clearInterval(interval);
         setStatus({
-          message:
-            "Image uploaded successfully but tags were not found: " + filename,
+          message: "Image uploaded successfully but tags were not found: " + filename,
           type: "success",
           show: true,
         });
@@ -71,41 +86,37 @@ const UploadToS3: React.FC = () => {
 
   const uploadFile = async () => {
     if (!file) {
-      setStatus({
-        message: "Please select a file first!",
-        type: "error",
-        show: true,
-      });
+      setStatus({ message: "Please select a file first!", type: "error", show: true });
       return;
     }
-
+  
     setUploading(true);
     const fileKey = `${SUBFOLDER}${file.name}`;
-
+  
     try {
       const params = {
         Bucket: S3_BUCKET,
         Key: fileKey,
         ContentType: file.type,
       };
-
+  
       const command = new PutObjectCommand(params);
       const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
       console.log("Generated upload URL:", uploadUrl);
-
+  
       const response = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
         headers: { "Content-Type": file.type },
       });
-
+  
       if (response.ok) {
         setStatus({
-          message: "File uploaded successfully. Starting to poll for tag.",
+          message: "File uploaded successfully. Checking system for malware...",
           type: "success",
           show: true,
         });
-        // Pass only the base filename (e.g., "test19.jpg") so the Lambda constructs the correct S3 key.
+        // Pass just the base filename so the backend constructs the correct S3 key.
         pollForTag(file.name);
       } else {
         setStatus({ message: "Upload failed.", type: "error", show: true });
