@@ -1,32 +1,41 @@
-export const getImageTag = async (filename: string): Promise<{ tag: string, filePath: String, tags: String[] } | null> => {
+interface TagResponse {
+  tag?: string;
+  filePath?: string;
+  tags?: { Key: string; Value: string }[];  // Changed from String[] to object array
+  duplicate?: boolean;
+  hasTags?: boolean;
+  originalKey?: string;
+}
+
+export const getImageTag = async (filename: string): Promise<TagResponse | null> => {
   const apiUrl = process.env.REACT_APP_GET_TAG_API_URL;
-  // const apiKey = process.env.REACT_APP_API_KEY; // Ensure this is set in your .env file
   if (!apiUrl) {
     console.error('Get Tag API URL not set');
     return null;
   }
   
-  // Remove the subfolder prefix if it exists
-  // let baseFilename = filename;
-  // const prefix = "image-test/";
-  // if (baseFilename.startsWith(prefix)) {
-  //   baseFilename = baseFilename.substring(prefix.length);
-  // }
-  
   const urlWithQuery = `${apiUrl}?filename=${encodeURIComponent(filename)}`;
   try {
+    console.log(`Making POST request to: ${urlWithQuery}`);
+    
     const response = await fetch(urlWithQuery, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       // Empty body for tag retrieval
       body: '',
+      // Add mode to help with CORS
+      mode: 'cors'
     });
+    
     if (response.ok) {
-      return await response.json();
+      const data = await response.json();
+      console.log('Got response:', data);
+      return data;
     } else {
-      console.error('Get Tag request not ok', response.status);
+      console.error('Get Tag request failed', response.status, response.statusText);
     }
   } catch (error) {
     console.error('Error fetching image tag:', error);
