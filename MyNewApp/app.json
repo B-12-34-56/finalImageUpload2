@@ -12,15 +12,20 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload images."
-      }
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload images.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.joelminaya.MyNewApp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["READ_EXTERNAL_STORAGE"]
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -49,6 +54,14 @@
     },
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "46ac264a-2634-4564-8a0a-abd11e4e9921"
+      },
+      "UPLOAD_API_URL": "https://e2rfetu0gf.execute-api.us-east-1.amazonaws.com/prod/upload",
+      "GET_TAG_API_URL": "https://e2rfetu0gf.execute-api.us-east-1.amazonaws.com/prod/getImageTag",
+      "API_KEY": "3wk8twZ2Msa01N92iRgXN2ony6mobzhK5DIcAKei"
+    }
   }
 }
